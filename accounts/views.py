@@ -1,13 +1,19 @@
-from django.shortcuts import render, redirect
-from .Register import RegisterForm
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import (
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+    update_session_auth_hash,
+)
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth import update_session_auth_hash
+from django.shortcuts import redirect, render
+
+from .Register import RegisterForm
 
 User = get_user_model()
+
 
 # register
 def register_view(request):
@@ -18,28 +24,26 @@ def register_view(request):
 
         if form.is_valid():
 
-            username = form.cleaned_data['username']
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-            mobile = form.cleaned_data.get('mobile')
-            address = form.cleaned_data.get('address')
+            username = form.cleaned_data["username"]
+            email = form.cleaned_data["email"]
+            password = form.cleaned_data["password"]
+            mobile = form.cleaned_data.get("mobile")
+            address = form.cleaned_data.get("address")
 
             user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
+                username=username, email=email, password=password
             )
             user.mobile = mobile
             user.address = address
             user.save()
             messages.success(request, "Account created successfully!")
-            return redirect('login')
+            return redirect("login")
         else:
             messages.error(request, "Please correct the errors below")
-    return render(request, 'register.html', {'form': form})
+    return render(request, "register.html", {"form": form})
 
 
-#login
+# login
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -53,9 +57,12 @@ def login_view(request):
         else:
             messages.error(request, "Invalid username or password")
     return render(request, "login.html")
-#dashboard
+
+
+# dashboard
 def dashboard(request):
     return render(request, "dashboard.html")
+
 
 # profile
 @login_required
@@ -78,20 +85,24 @@ def profile(request):
         old = request.POST.get("old_password")
         new = request.POST.get("new_password")
         confirm = request.POST.get("confirm_password")
-#mobile validation
+        # mobile validation
         if mobile:
             if not mobile.isdigit():
                 context["mobile_error"] = "Mobile must contain only numbers"
             elif len(mobile) != 10:
                 context["mobile_error"] = "Mobile must be 10 digits"
-#password validation
+        # password validation
         if old or new or confirm:
             if not check_password(old, user.password):
                 context["old_password_error"] = "Old password is incorrect"
             elif new != confirm:
                 context["password_error"] = "New password & confirm do not match"
 
-        if not context["mobile_error"] and not context["old_password_error"] and not context["password_error"]:
+        if (
+            not context["mobile_error"]
+            and not context["old_password_error"]
+            and not context["password_error"]
+        ):
 
             user.username = username
             user.email = email
@@ -104,6 +115,7 @@ def profile(request):
             user.save()
             context["success_msg"] = "Profile updated successfully!"
     return render(request, "profile.html", context)
+
 
 # logout
 def logout_view(request):

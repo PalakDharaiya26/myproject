@@ -1,5 +1,6 @@
 from django import forms
 
+
 class RegisterForm(forms.Form):
     username = forms.CharField(max_length=150)
     email = forms.EmailField()
@@ -12,9 +13,7 @@ class RegisterForm(forms.Form):
         password = self.cleaned_data.get("password")
 
         if len(password) < 8:
-            raise forms.ValidationError(
-                "Password must be at least 8 characters"
-            )
+            raise forms.ValidationError("Password must be at least 8 characters")
 
         if not any(char.isupper() for char in password):
             raise forms.ValidationError(
@@ -27,9 +26,7 @@ class RegisterForm(forms.Form):
             )
 
         if not any(char.isdigit() for char in password):
-            raise forms.ValidationError(
-                "Password must contain at least one number"
-            )
+            raise forms.ValidationError("Password must contain at least one number")
 
         return password
 
@@ -37,9 +34,7 @@ class RegisterForm(forms.Form):
         mobile = self.cleaned_data.get("mobile")
 
         if not mobile.isdigit() or len(mobile) != 10:
-            raise forms.ValidationError(
-                "Mobile number must be 10 digits"
-            )
+            raise forms.ValidationError("Mobile number must be 10 digits")
 
         return mobile
 
@@ -51,8 +46,6 @@ class RegisterForm(forms.Form):
 
         if password and confirm_password:
             if password != confirm_password:
-                raise forms.ValidationError(
-                    "Passwords do not match"
-                )
+                raise forms.ValidationError("Passwords do not match")
 
         return cleaned_data

@@ -1,0 +1,37 @@
+<style>
+.navbar{
+    background:#343a40;
+    padding: 19px;
+    display:flex;
+    justify-content:space-between;
+    font-family:Arial;
+}
+
+.navbar a{
+    color: white;
+    text-decoration: none;
+    margin: 0 12px;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.navbar a:hover{
+    color: #00d4ff;
+}
+</style>
+
+<div class="navbar">
+ 
+    <div>
+        <a href="/dashboard/">Home</a>
+    </div>
+    <div>
+        {% if user.is_authenticated %}
+            <a href="/profile/">Profile</a>
+            <a href="/logout/">Logout</a>
+        {% else %}
+            <a href="/login/">Login</a>
+        {% endif %}
+    </div>
+
+</div>

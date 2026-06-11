@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            background: #f4f6f9;
+        }
+
+        .box{
+            width: 400px;
+            margin: 50px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        h2{
+            text-align: center;
+        }
+
+        input, textarea{
+            width:100%;
+            padding:10px;
+            margin-top:5px;
+            margin-bottom:5px;
+            border:1px solid #ccc;
+            border-radius:5px;
+            box-sizing:border-box;
+        }
+
+        .btn{
+            width:100%;
+            padding:10px;
+            background:#007bff;
+            color:white;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        .btn:hover{
+            background:#0056b3;
+        }
+
+        .msg{
+            color:green;
+            text-align:center;
+        }
+
+        .error{
+            color:red;
+            font-size:12px;
+            margin-bottom:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+{% include "navbar.html" %}
+
+<div class="box">
+
+    <h2>👤 My Profile</h2>
+
+    {% if success_msg %}
+        <p class="msg">{{ success_msg }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Username</label>
+        <input type="text" name="username" value="{{ user.username }}">
+
+        <label>Email</label>
+        <input type="email" name="email" value="{{ user.email }}">
+
+        <label>Mobile Number</label>
+        <input type="text" name="mobile" value="{{ user.mobile }}">
+        <div class="error">{{ mobile_error }}</div>
+
+        <label>Address</label>
+        <textarea name="address">{{ user.address }}</textarea>
+
+        <label>Old Password</label>
+        <input type="password" name="old_password">
+        <div class="error">{{ old_password_error }}</div>
+
+        <label>New Password</label>
+        <input type="password" name="new_password">
+
+        <label>Confirm Password</label>
+        <input type="password" name="confirm_password">
+        <div class="error">{{ password_error }}</div>
+
+        <button type="submit" class="btn">Update Profile</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            background: #f4f6f9;
+        }
+
+        .box{
+            width: 350px;
+            margin: 80px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        h2{
+            text-align: center;
+        }
+
+        input{
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button{
+            width: 100%;
+            padding: 10px;
+            background: #48b300;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover{
+            background: #58c211;
+        }
+
+        .link{
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .link a{
+            color: #00aaff;
+            text-decoration: none;
+        }
+
+        .error{
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h2>Login</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p class="error">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input type="text" name="username" placeholder="Username">
+        <input type="password" name="password" placeholder="Password">
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div class="link">
+        Don't have account?
+        <a href="/register/">Sign up</a>
+    </div>
+
+</div>
+
+</body>
+</html>

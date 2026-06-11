@@ -1,0 +1,158 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f9;
+    min-height:100vh;
+    margin:0;
+    padding:0;
+    overflow-x:hidden;
+}
+
+/* navbar */
+.navbar{
+    background:#343a40;
+    padding:18px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    margin:0;
+}
+
+.navbar a{
+    color:white;
+    text-decoration:none;
+    margin:0 12px;
+    font-size:17px;
+    transition:0.3s;
+}
+
+.navbar a:hover{
+    color:#00d4ff;
+}
+
+/* form box */
+.box{
+    width:400px;
+    max-width:95%;
+    margin:50px auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+    color:#333;
+}
+
+label{
+    display:block;
+    margin-top:12px;
+    margin-bottom:5px;
+    font-weight:bold;
+    color:#333;
+    font-size:14px;
+}
+
+/* INPUT FIX */
+input{
+    width:100%;
+    padding:10px;
+    margin:12px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+/* TEXTAREA FIX (MAIN ISSUE SOLVED HERE) */
+textarea{
+    width:100%;
+    height:60px !important;
+    min-height:60px !important;
+    max-height:60px !important;
+    padding:10px;
+    margin:12px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+    resize:none;
+    display:block;
+}
+
+/* focus */
+input:focus,
+textarea:focus{
+    outline:none;
+    border-color:#007bff;
+}
+
+/* button */
+button,
+.btn{
+    width:100%;
+    padding:12px;
+    margin-top:18px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:15px;
+    color:white;
+    background:#28a745;
+    transition:0.3s;
+}
+
+button:hover,
+.btn:hover{
+    background:#218838;
+}
+
+/* links */
+.link,
+.signup-link{
+    text-align:center;
+    margin-top:15px;
+    font-size:14px;
+}
+
+.link a,
+.signup-link a{
+    color:#007bff;
+    text-decoration:none;
+}
+
+.link a:hover,
+.signup-link a:hover{
+    text-decoration:underline;
+}
+
+/* errors */
+.error{
+    color:red;
+    font-size:12px;
+    margin-top:4px;
+}
+
+/* profile image */
+.profile-img{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    object-fit:cover;
+    display:block;
+    margin:0 auto 15px;
+    border:3px solid #ddd;
+}
+.container img{
+    width:100%;
+    height:calc(100vh - 70px);
+    object-fit:cover;
+    display:block;
+}

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Page</title>
+
+    <style>
+        body{
+            font-family: Arial;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .box{
+            width: 380px;
+            margin: 40px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+        }
+
+        h2{
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        label{
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        input, textarea{
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        textarea{
+            height: 70px;
+            resize: none;
+        }
+
+        button{
+            width: 100%;
+            padding: 12px;
+            margin-top: 18px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover{
+            background: #218838;
+        }
+
+        .error{
+            color: red;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .form-error{
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .signup-link{
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .signup-link a{
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h2>Register</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Username</label>
+        {{ form.username }}
+        <div class="error">{{ form.username.errors }}</div>
+
+        <label>Email</label>
+        {{ form.email }}
+        <div class="error">{{ form.email.errors }}</div>
+
+        <label>Phone No</label>
+        {{ form.mobile }}
+        <div class="error">{{ form.mobile.errors }}</div>
+
+        <label>Address</label>
+        {{ form.address }}
+        <div class="error">{{ form.address.errors }}</div>
+
+        <label>Password</label>
+        {{ form.password }}
+        <div class="error">{{ form.password.errors }}</div>
+
+        <label>Confirm Password</label>
+        {{ form.confirm_password }}
+        <div class="error">{{ form.confirm_password.errors }}</div>
+
+        <div class="form-error">
+            {{ form.non_field_errors }}
+        </div>
+
+        <button type="submit">Register</button>
+
+        <div class="signup-link">
+            Already have an account? <a href="/login/">Login</a>
+        </div>
+    </form>
+</div>
+</body>
+</html> 

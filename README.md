@@ -1,4 +1,3 @@
-# Django DRF Project
 
 This is a simple Django project user authentication 
 

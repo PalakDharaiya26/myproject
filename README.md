@@ -1,39 +1,31 @@
-🚀 GitHub PR (Pull Request) Banavva Steps
-✅ Step 1: Branch banao (Git Bash ma)
-git checkout -b dashboard-image-update
-✅ Step 2: VS Code ma change karo
-dashboard image change karo
-CSS change karo (jo karvu hoy)
+User Authentication System
+Project Overview
 
-Save karo
+This is a User Authentication System developed using Django. The project allows users to register, log in, manage their profile, and securely log out. It also includes an admin panel to manage user information.
 
-✅ Step 3: Add karo
-git add .
-✅ Step 4: Commit karo
-git commit -m "Update dashboard image"
-✅ Step 5: Push karo
-git push -u origin dashboard-image-update
-✅ Step 6: GitHub open karo
+Features
+User Registration
+User Login
+Dashboard
+Profile Management
+Update Username
+Update Mobile Number
+Update Address
+Change Password
+Email is read-only and cannot be changed
+User Logout
+Admin Panel to view registered users
 
-Repo kholo
-
-👉 Tya top par aavse:
-
-Compare & pull request
-
-athva
-
-dashboard-image-update had recent pushes
-✅ Step 7: PR banavo
-Click Compare & pull request
-Description lakho (optional):
-Updated dashboard image and fixed UI scrolling issue.
-Click Create pull request
-✅ Step 8: Merge (last step)
-Click Merge pull request
-Confirm merge
-
-🎉 Done!
-
-💡 Short Summary
-branch → change → add → commit → push → PR → merge
+Project Workflow
+1.A new user creates an account using the Registration page.
+2.The user logs in with a valid username and password.
+3.After successful login, the user is redirected to the Dashboard.
+4.The Dashboard contains a navigation bar with options such as Profile and Logout.
+5.In the Profile page, the user can:
+    Update Username
+    Update Mobile Number  
+    Update Address
+    Change Password
+    Email remains read-only and cannot be changed.
+6.The user can log out securely.
+7.The Django Admin Panel displays all registered users and their details.

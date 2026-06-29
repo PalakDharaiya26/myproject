@@ -3,11 +3,9 @@ from django.urls import include, path
 from rest_framework import routers
 
 from accounts import views as web_views
-from quickstart import views as api_views
 
 router = routers.DefaultRouter()
-router.register(r"users", api_views.UserViewSet)
-router.register(r"groups", api_views.GroupViewSet)
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -19,3 +17,4 @@ urlpatterns = [
     path("", include(router.urls)),
     path("api-auth/", include("rest_framework.urls")),
 ]
+

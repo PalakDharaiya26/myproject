@@ -92,11 +92,15 @@ def profile(request):
             elif len(mobile) != 10:
                 context["mobile_error"] = "Mobile must be 10 digits"
         # password validation
-        if old or new or confirm:
+        if old and new and confirm:
             if not check_password(old, user.password):
                 context["old_password_error"] = "Old password is incorrect"
+
             elif new != confirm:
                 context["password_error"] = "New password & confirm do not match"
+
+            elif old == new:
+                 context["password_error"] = "New password cannot be same as old password"
 
         if (
             not context["mobile_error"]

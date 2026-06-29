@@ -8,7 +8,6 @@ router = routers.DefaultRouter()
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("register/", web_views.register_view),
     path("login/", web_views.login_view, name="login"),
     path("dashboard/", web_views.dashboard, name="home"),
@@ -17,4 +16,3 @@ urlpatterns = [
     path("", include(router.urls)),
     path("api-auth/", include("rest_framework.urls")),
 ]
-

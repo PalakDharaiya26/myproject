@@ -1,11 +1,7 @@
+# Django imports
 from django.contrib import messages
-from django.contrib.auth import (
-    authenticate,
-    get_user_model,
-    login,
-    logout,
-    update_session_auth_hash,
-)
+from django.contrib.auth import (authenticate, get_user_model, login, logout,
+                                 update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
 from django.shortcuts import redirect, render
@@ -16,6 +12,8 @@ User = get_user_model()
 
 
 def register_view(request):
+    """Registers a new user after validating the registration form."""
+
     form = RegisterForm()
 
     if request.method == "POST":
@@ -43,6 +41,10 @@ def register_view(request):
 
 
 def login_view(request):
+    """
+    Checks the username and password. If they are correct,the user is logged in and redirected to the home page.
+    """
+
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -57,12 +59,16 @@ def login_view(request):
     return render(request, "login.html")
 
 
+@login_required(login_url="login")
 def dashboard(request):
     return render(request, "dashboard.html")
 
 
-@login_required
+@login_required(login_url="login")
 def profile(request):
+    """
+    Allows the user to update username, email, mobile number, address, and password after validation.
+    """
     user = request.user
     context = {
         "user": user,
@@ -75,7 +81,6 @@ def profile(request):
     if request.method == "POST":
         mobile = request.POST.get("mobile")
         username = request.POST.get("username")
-        email = request.POST.get("email")
         address = request.POST.get("address")
 
         old = request.POST.get("old_password")
@@ -106,7 +111,6 @@ def profile(request):
         ):
 
             user.username = username
-            user.email = email
             user.mobile = mobile
             user.address = address
 
@@ -118,8 +122,10 @@ def profile(request):
     return render(request, "profile.html", context)
 
 
-# logout
 def logout_view(request):
+    """
+    Logs out the current user and redirects to the login page.
+    """
     logout(request)
     messages.success(request, "Logout Successfully!")
     return redirect("login")

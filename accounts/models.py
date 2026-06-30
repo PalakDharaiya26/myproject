@@ -1,18 +1,17 @@
-"""
-Models for the Accounts application.
-
-This module contains the custom user model used for
-user authentication and profile management.
-"""
-
+# Django imports
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
 class CustomUser(AbstractUser):
     """
-    Custom user model with additional fields such as
-    mobile number, address, and profile picture.
+    Custom user model extending AbstractUser.
+
+    Fields:
+        email (EmailField): Stores the user's unique email address.
+        mobile (CharField): Stores the user's mobile number (maximum 15 characters).
+        address (TextField): Stores the user's address.
+        profile_pic (ImageField): Stores the user's profile picture.
     """
 
     email = models.EmailField(unique=True)

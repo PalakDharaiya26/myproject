@@ -1,7 +1,20 @@
+# Django imports
 from django import forms
 
 
 class RegisterForm(forms.Form):
+    """
+    Form for user registration
+
+    Fields:
+        username (CharField): User's username
+        email (EmailField): User's email address
+        mobile (CharField): User's 10-digit mobile number
+        address (CharField): User's address
+        password (CharField): User's password
+        confirm_password (CharField): Confirms the user's password
+    """
+
     username = forms.CharField(max_length=150)
     email = forms.EmailField()
     mobile = forms.CharField(max_length=10)
@@ -10,6 +23,11 @@ class RegisterForm(forms.Form):
     confirm_password = forms.CharField(widget=forms.PasswordInput)
 
     def clean_password(self):
+        """
+        validate the password
+        Ensures the password contains at least 8 characters,
+        one uppercase letter, one lowercase letter, and one number
+        """
         password = self.cleaned_data.get("password")
 
         if len(password) < 8:
@@ -31,6 +49,11 @@ class RegisterForm(forms.Form):
         return password
 
     def clean_mobile(self):
+        """
+        Validates the Mobile
+
+        Ensures the mobile number contains exactly 10 digits
+        """
         mobile = self.cleaned_data.get("mobile")
 
         if not mobile.isdigit() or len(mobile) != 10:

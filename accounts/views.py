@@ -1,18 +1,25 @@
+# Python imports
+import logging
+
 # Django imports
 from django.contrib import messages
 from django.contrib.auth import (authenticate, get_user_model, login, logout,
                                  update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 from .Register import RegisterForm
-
+ 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
-def register_view(request):
+def register_view(request: HttpRequest) -> HttpResponse:
     """Registers a new user after validating the registration form."""
+
+    logger.info("Register page accessed")
 
     form = RegisterForm()
 
@@ -33,6 +40,7 @@ def register_view(request):
             user.mobile = mobile
             user.address = address
             user.save()
+            logger.info(f"User '{username}' registered successfully")
             messages.success(request, "Account created successfully!")
             return redirect("login")
         else:
@@ -40,36 +48,43 @@ def register_view(request):
     return render(request, "register.html", {"form": form})
 
 
-def login_view(request):
+def login_view(request: HttpRequest) -> HttpResponse:
     """
     Checks the username and password. If they are correct,the user is logged in and redirected to the home page.
     """
+    logger.info("Login page accessed")
 
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-
+        logger.info(f"User '{username}' logged in successfully")
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
             login(request, user)
+            logger.info(f"User '{username}' logged in successfully")
             return redirect("home")
         else:
+            logger.warning(f"Failed login attempt for username '{username}'")
             messages.error(request, "Invalid username or password")
     return render(request, "login.html")
 
 
 @login_required(login_url="login")
 def dashboard(request):
+    logger.info(f"Dashboard accessed by '{request.user.username}'")
     return render(request, "dashboard.html")
 
 
 @login_required(login_url="login")
-def profile(request):
+def profile(request: HttpRequest) -> HttpResponse:
     """
     Allows the user to update username, email, mobile number, address, and password after validation.
     """
+
     user = request.user
+    logger.info(f"Profile page accessed by '{user.username}'")
+
     context = {
         "user": user,
         "success_msg": "",
@@ -116,16 +131,20 @@ def profile(request):
 
             if old and new and confirm:
                 user.set_password(new)
+                logger.info(f"Password updated for '{user.username}'")
                 update_session_auth_hash(request, user)
             user.save()
+            logger.info(f"Profile updated for '{user.username}'")
             context["success_msg"] = "Profile updated successfully!"
     return render(request, "profile.html", context)
 
 
-def logout_view(request):
+def logout_view(request: HttpRequest) -> HttpResponse:
     """
     Logs out the current user and redirects to the login page.
     """
+    username = request.user.username
+    logger.info(f"User '{username}' logged out")
     logout(request)
     messages.success(request, "Logout Successfully!")
     return redirect("login")

@@ -11,7 +11,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 from .Register import RegisterForm
- 
+
 User = get_user_model()
 logger = logging.getLogger(__name__)
 

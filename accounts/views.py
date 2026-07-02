@@ -147,4 +147,4 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     logger.info(f"User '{username}' logged out")
     logout(request)
     messages.success(request, "Logout Successfully!")
-    return redirect("login")
+    return redirect("login  ")

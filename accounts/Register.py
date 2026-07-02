@@ -5,19 +5,17 @@ from django import forms
 class RegisterForm(forms.Form):
     """
     Form for user registration
-
-    Fields:
-        username (CharField): User's username
-        email (EmailField): User's email address
-        mobile (CharField): User's 10-digit mobile number
-        address (CharField): User's address
-        password (CharField): User's password
-        confirm_password (CharField): Confirms the user's password
+        username (CharField): Stores the unique username of the user.
+        email (EmailField): Stores the user's official email address.
+        mobile_number (CharField): Stores the user's mobile_number or contact number.
+        address (CharField): Stores the residential or communication address.
+        password (CharField): Stores the secure account password.
+        confirm_password (CharField): Stores the confirmation password to verify against the original.
     """
 
     username = forms.CharField(max_length=150)
     email = forms.EmailField()
-    mobile = forms.CharField(max_length=10)
+    mobile_number = forms.CharField(max_length=15)
     address = forms.CharField(widget=forms.Textarea, required=False)
     password = forms.CharField(widget=forms.PasswordInput)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
@@ -25,10 +23,14 @@ class RegisterForm(forms.Form):
     def clean_password(self):
         """
         validate the password
+
         Ensures the password contains at least 8 characters,
         one uppercase letter, one lowercase letter, and one number
         """
         password = self.cleaned_data.get("password")
+
+        if not password:
+            return password
 
         if len(password) < 8:
             raise forms.ValidationError("Password must be at least 8 characters")
@@ -48,18 +50,20 @@ class RegisterForm(forms.Form):
 
         return password
 
-    def clean_mobile(self):
+    def clean_mobile_number(self):
         """
-        Validates the Mobile
+        Validates the mobile_number
 
-        Ensures the mobile number contains exactly 10 digits
+        Ensures the mobile_number number contains exactly 10 digits
         """
-        mobile = self.cleaned_data.get("mobile")
+        mobile_number = self.cleaned_data.get("mobile_number")
 
-        if not mobile.isdigit() or len(mobile) != 10:
-            raise forms.ValidationError("Mobile number must be 10 digits")
+        if not mobile_number.isdigit():
+            raise forms.ValidationError(
+                "mobile_number number must contain only numbers."
+            )
 
-        return mobile
+        return self.mobile_number
 
     def clean(self):
         cleaned_data = super().clean()

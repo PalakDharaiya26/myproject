@@ -27,19 +27,19 @@ def register_view(request: HttpRequest) -> HttpResponse:
         form = RegisterForm(request.POST)
 
         if form.is_valid():
-
             username = form.cleaned_data["username"]
             email = form.cleaned_data["email"]
             password = form.cleaned_data["password"]
-            mobile = form.cleaned_data.get("mobile")
+            mobile_number = form.cleaned_data.get("mobile_number")
             address = form.cleaned_data.get("address")
 
             user = User.objects.create_user(
                 username=username, email=email, password=password
             )
-            user.mobile = mobile
+            user.mobile_number = mobile_number
             user.address = address
             user.save()
+
             logger.info(f"User '{username}' registered successfully")
             messages.success(request, "Account created successfully!")
             return redirect("login")
@@ -57,7 +57,7 @@ def login_view(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-        logger.info(f"User '{username}' logged in successfully")
+
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
@@ -71,7 +71,7 @@ def login_view(request: HttpRequest) -> HttpResponse:
 
 
 @login_required(login_url="login")
-def dashboard(request):
+def dashboard(request: HttpRequest) -> HttpResponse:
     logger.info(f"Dashboard accessed by '{request.user.username}'")
     return render(request, "dashboard.html")
 
@@ -79,7 +79,8 @@ def dashboard(request):
 @login_required(login_url="login")
 def profile(request: HttpRequest) -> HttpResponse:
     """
-    Allows the user to update username, email, mobile number, address, and password after validation.
+    Allows the user to update username, email, mobile_number,
+    address, and password after validation.
     """
 
     user = request.user
@@ -88,24 +89,21 @@ def profile(request: HttpRequest) -> HttpResponse:
     context = {
         "user": user,
         "success_msg": "",
-        "mobile_error": "",
+        "mobile_number_error": "",
         "old_password_error": "",
         "password_error": "",
     }
 
     if request.method == "POST":
-        mobile = request.POST.get("mobile")
+        mobile_number = request.POST.get("mobile_number")
         username = request.POST.get("username")
         address = request.POST.get("address")
 
         old = request.POST.get("old_password")
         new = request.POST.get("new_password")
         confirm = request.POST.get("confirm_password")
-        if mobile:
-            if not mobile.isdigit():
-                context["mobile_error"] = "Mobile must contain only numbers"
-            elif len(mobile) != 10:
-                context["mobile_error"] = "Mobile must be 10 digits"
+        if mobile_number and not mobile_number.isdigit():
+            context["mobile_number_error"] = "Mobile number must contain only numbers."
 
         if old and new and confirm:
             if not check_password(old, user.password):
@@ -120,13 +118,13 @@ def profile(request: HttpRequest) -> HttpResponse:
                 )
 
         if (
-            not context["mobile_error"]
+            not context["mobile_number_error"]
             and not context["old_password_error"]
             and not context["password_error"]
         ):
 
             user.username = username
-            user.mobile = mobile
+            user.mobile_number = mobile_number
             user.address = address
 
             if old and new and confirm:
@@ -147,4 +145,4 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     logger.info(f"User '{username}' logged out")
     logout(request)
     messages.success(request, "Logout Successfully!")
-    return redirect("login  ")
+    return redirect("login")

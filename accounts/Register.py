@@ -7,7 +7,7 @@ class RegisterForm(forms.Form):
     Form for user registration
         username (CharField): Stores the unique username of the user.
         email (EmailField): Stores the user's official email address.
-        mobile_number (CharField): Stores the user's mobile_number or contact number.
+        mobile_number (CharField): Stores the user's mobile_number.
         address (CharField): Stores the residential or communication address.
         password (CharField): Stores the secure account password.
         confirm_password (CharField): Stores the confirmation password to verify against the original.
@@ -54,7 +54,7 @@ class RegisterForm(forms.Form):
         """
         Validates the mobile_number
 
-        Ensures the mobile_number number contains exactly 10 digits
+        Ensures the mobile number contains only digits.
         """
         mobile_number = self.cleaned_data.get("mobile_number")
 
@@ -63,7 +63,7 @@ class RegisterForm(forms.Form):
                 "mobile_number number must contain only numbers."
             )
 
-        return self.mobile_number
+        return mobile_number
 
     def clean(self):
         cleaned_data = super().clean()

@@ -33,18 +33,26 @@ def register_view(request: HttpRequest) -> HttpResponse:
             mobile_number = form.cleaned_data.get("mobile_number")
             address = form.cleaned_data.get("address")
 
-            user = User.objects.create_user(
-                username=username, email=email, password=password
-            )
-            user.mobile_number = mobile_number
-            user.address = address
-            user.save()
+            if User.objects.filter(username=username).exists():
+                form.add_error("username", "Username already exists.")
 
-            logger.info(f"User '{username}' registered successfully")
-            messages.success(request, "Account created successfully!")
-            return redirect("login")
+            elif User.objects.filter(email=email).exists():
+                form.add_error("email", "Email already exists.")
+
+            else:
+                user = User.objects.create_user(
+                    username=username, email=email, password=password
+                )
+                user.mobile_number = mobile_number
+                user.address = address
+                user.save()
+
+                logger.info("User '%s' registered successfully", username)
+                messages.success(request, "Account created successfully!")
+                return redirect("login")
         else:
             messages.error(request, "Please correct the errors below")
+
     return render(request, "register.html", {"form": form})
 
 
@@ -62,17 +70,17 @@ def login_view(request: HttpRequest) -> HttpResponse:
 
         if user is not None:
             login(request, user)
-            logger.info(f"User '{username}' logged in successfully")
+            logger.info("User '%s' logged in successfully", username)
             return redirect("home")
         else:
-            logger.warning(f"Failed login attempt for username '{username}'")
+            logger.warning("Failed login attempt for username '%s'", username)
             messages.error(request, "Invalid username or password")
     return render(request, "login.html")
 
 
 @login_required(login_url="login")
 def dashboard(request: HttpRequest) -> HttpResponse:
-    logger.info(f"Dashboard accessed by '{request.user.username}'")
+    logger.info("Dashboard accessed by '%s'", request.user.username)
     return render(request, "dashboard.html")
 
 
@@ -84,7 +92,7 @@ def profile(request: HttpRequest) -> HttpResponse:
     """
 
     user = request.user
-    logger.info(f"Profile page accessed by '{user.username}'")
+    logger.info("Profile page accessed by '%s'", user.username)
 
     context = {
         "user": user,
@@ -112,6 +120,22 @@ def profile(request: HttpRequest) -> HttpResponse:
             elif new != confirm:
                 context["password_error"] = "New password & confirm do not match"
 
+            elif len(new) < 8:
+                context["password_error"] = "Password must be at least 8 characters"
+
+            elif not any(char.isupper() for char in new):
+                context["password_error"] = (
+                    "Password must contain at least one uppercase letter"
+                )
+
+            elif not any(char.islower() for char in new):
+                context["password_error"] = (
+                    "Password must contain at least one lowercase letter"
+                )
+
+            elif not any(char.isdigit() for char in new):
+                context["password_error"] = "Password must contain at least one number"
+
             elif old == new:
                 context["password_error"] = (
                     "New password cannot be same as old password"
@@ -129,10 +153,10 @@ def profile(request: HttpRequest) -> HttpResponse:
 
             if old and new and confirm:
                 user.set_password(new)
-                logger.info(f"Password updated for '{user.username}'")
+                logger.info("Password updated for '%s'", user.username)
                 update_session_auth_hash(request, user)
             user.save()
-            logger.info(f"Profile updated for '{user.username}'")
+            logger.info("Profile updated for '%s'", user.username)
             context["success_msg"] = "Profile updated successfully!"
     return render(request, "profile.html", context)
 
@@ -142,7 +166,7 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     Logs out the current user and redirects to the login page.
     """
     username = request.user.username
-    logger.info(f"User '{username}' logged out")
+    logger.info("User '%s' logged out", username)
     logout(request)
     messages.success(request, "Logout Successfully!")
     return redirect("login")

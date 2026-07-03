@@ -97,7 +97,7 @@ def profile(request: HttpRequest) -> HttpResponse:
     context = {
         "user": user,
         "success_msg": "",
-        "mobile_number_error": "",
+        "username_error": "",
         "old_password_error": "",
         "password_error": "",
     }
@@ -107,11 +107,13 @@ def profile(request: HttpRequest) -> HttpResponse:
         username = request.POST.get("username")
         address = request.POST.get("address")
 
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            context["username_error"] = "Username already exists."
+        if mobile_number and not mobile_number.isdigit():
+            context["mobile_number_error"] = "Only digits allowed"
         old = request.POST.get("old_password")
         new = request.POST.get("new_password")
         confirm = request.POST.get("confirm_password")
-        if mobile_number and not mobile_number.isdigit():
-            context["mobile_number_error"] = "Mobile number must contain only numbers."
 
         if old and new and confirm:
             if not check_password(old, user.password):
@@ -120,29 +122,13 @@ def profile(request: HttpRequest) -> HttpResponse:
             elif new != confirm:
                 context["password_error"] = "New password & confirm do not match"
 
-            elif len(new) < 8:
-                context["password_error"] = "Password must be at least 8 characters"
-
-            elif not any(char.isupper() for char in new):
-                context["password_error"] = (
-                    "Password must contain at least one uppercase letter"
-                )
-
-            elif not any(char.islower() for char in new):
-                context["password_error"] = (
-                    "Password must contain at least one lowercase letter"
-                )
-
-            elif not any(char.isdigit() for char in new):
-                context["password_error"] = "Password must contain at least one number"
-
             elif old == new:
                 context["password_error"] = (
                     "New password cannot be same as old password"
                 )
 
         if (
-            not context["mobile_number_error"]
+            not context["username_error"]
             and not context["old_password_error"]
             and not context["password_error"]
         ):

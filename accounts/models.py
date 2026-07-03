@@ -17,7 +17,6 @@ class CustomUser(AbstractUser):
         email (EmailField): Stores the user's unique email address.
         mobile_number (CharField): Stores the user's mobile number (maximum 15 characters).
         address (TextField): Stores the user's address.
-        profile_pic (ImageField): Stores the user's profile picture.
     """
 
     email = models.EmailField(unique=True)

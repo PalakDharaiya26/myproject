@@ -10,7 +10,7 @@ from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from .Register import RegisterForm
+from .forms import RegisterForm
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -98,6 +98,7 @@ def profile(request: HttpRequest) -> HttpResponse:
         "user": user,
         "success_msg": "",
         "username_error": "",
+        "mobile_number_error": "",
         "old_password_error": "",
         "password_error": "",
     }
@@ -122,6 +123,18 @@ def profile(request: HttpRequest) -> HttpResponse:
             elif new != confirm:
                 context["password_error"] = "New password & confirm do not match"
 
+            elif len(new) < 8:
+                context["password_error"] = "Minimum 8 characters required"
+
+            elif not any(c.isupper() for c in new):
+                context["password_error"] = "Must contain uppercase letter"
+
+            elif not any(c.islower() for c in new):
+                context["password_error"] = "Must contain lowercase letter"
+
+            elif not any(c.isdigit() for c in new):
+                context["password_error"] = "Must contain number"
+
             elif old == new:
                 context["password_error"] = (
                     "New password cannot be same as old password"
@@ -130,6 +143,7 @@ def profile(request: HttpRequest) -> HttpResponse:
         if (
             not context["username_error"]
             and not context["old_password_error"]
+            and not context["mobile_number_error"]
             and not context["password_error"]
         ):
 

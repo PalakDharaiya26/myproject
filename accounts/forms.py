@@ -1,24 +1,32 @@
 # Django imports
 from django import forms
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
-class RegisterForm(forms.Form):
+class RegisterForm(forms.ModelForm):
     """
-    Form for user registration
-        username (CharField): Stores the unique username of the user.
-        email (EmailField): Stores the user's official email address.
-        mobile_number (CharField): Stores the user's mobile_number.
-        address (CharField): Stores the residential or communication address.
-        password (CharField): Stores the secure account password.
-        confirm_password (CharField): Stores the confirmation password to verify against the original.
+    Model form for user registration.
+
+    Fields:
+        username (Model field): User's unique username.
+        email (Model field): User's email address.
+        mobile_number (Model field): User's mobile number.
+        address (Model field): User's address.
+        password (CharField): User's password.
+        confirm_password (CharField): Password confirmation.
     """
 
-    username = forms.CharField(max_length=150)
-    email = forms.EmailField()
-    mobile_number = forms.CharField(max_length=15)
-    address = forms.CharField(widget=forms.Textarea, required=False)
     password = forms.CharField(widget=forms.PasswordInput)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "mobile_number", "address"]
+        widgets = {
+            "address": forms.Textarea(),
+        }
 
     def clean_password(self):
         """

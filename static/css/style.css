@@ -172,3 +172,36 @@ input,
 textarea{
     box-sizing:border-box;
 }
+.subtitle{
+    text-align:center;
+    color:#666;
+    font-size:14px;
+    margin-bottom:18px;
+    line-height:1.5;
+}
+
+button{
+    margin-top:10px;
+}
+
+.link{
+    margin-top:18px;
+}
+.forgot-link{
+    text-align:right;
+    margin-top:8px;
+    margin-bottom:15px;
+}
+
+.forgot-link a{
+    text-decoration:none;
+    color:#007bff;
+    font-size:14px;
+    font-weight:500;
+    transition:0.3s;
+}
+
+.forgot-link a:hover{
+    text-decoration:underline;
+    color:#0056b3;
+}

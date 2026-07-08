@@ -13,41 +13,41 @@
 <div class="box">
 
     <h2>👤 My Profile</h2>
-
-    {% if success_msg %}
-        <p class="msg">{{ success_msg }}</p>
-    {% endif %}
-
+    
     <form method="POST">
         {% csrf_token %}
 
         <label>Username</label>
-        <input type="text" name="username" value="{{ user.username }}">
-        <div class="error">{{ username_error }}</div>
-        
+        {{ form.username }}
+
         <label>Email</label>
-        <input type="email" name="email" value="{{ user.email }}" readonly>
+        {{ form.email }}
 
         <label>mobile number</label>
-        <input type="text" name="mobile_number" value="{{ user.mobile_number }}">
-        <div class="error">{{ mobile_number_error }}</div>
+        {{ form.mobile_number }}
 
         <label>Address</label>
-        <textarea name="address">{{ user.address }}</textarea>
+        {{ form.address }}
 
         <label>Old Password</label>
-        <input type="password" name="old_password">
-        <div class="error">{{ old_password_error }}</div>
+        {{ form.old_password }}
 
         <label>New Password</label>
-        <input type="password" name="new_password">
+        {{ form.new_password }}
 
         <label>Confirm Password</label>
-        <input type="password" name="confirm_password">
-        <div class="error">{{ password_error }}</div>
+        {{ form.confirm_password }}
 
         <button type="submit" class="btn">Update Profile</button>
+     {% for field in form %}
+        {% for error in field.errors %}
+            <p class="error">{{ error }}</p>
+        {% endfor %}
+    {% endfor %}
 
+    {% for error in form.non_field_errors %}
+        <p class="error">{{ error }}</p>
+    {% endfor %}
     </form>
 
 </div>

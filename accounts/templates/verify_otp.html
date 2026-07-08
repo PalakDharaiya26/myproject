@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+
+<div class="box">
+
+    <h2>Verify OTP</h2>
+    <p class="subtitle">
+        Enter the 6-digit OTP sent to your email.
+    </p>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <p class="msg">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input
+            type="text"
+            name="otp"
+            placeholder="Enter 6-digit OTP"
+            maxlength="6"
+            required
+        >
+
+        <button type="submit">Verify OTP</button>
+    </form>
+
+    <div class="link">
+        Didn't receive the OTP?
+        <a href="{% url 'resend_otp' %}">Resend OTP</a>
+    </div>
+
+    <div class="link">
+        <a href="{% url 'login' %}">Back to Login</a>
+    </div>
+
+</div>
+
+</body>
+</html>

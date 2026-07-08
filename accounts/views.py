@@ -1,16 +1,29 @@
 # Python imports
 import logging
-
+import random
 # Django imports
 from django.contrib import messages
-from django.contrib.auth import (authenticate, get_user_model, login, logout,
-                                 update_session_auth_hash)
+from django.contrib.auth import (
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+    update_session_auth_hash,
+)
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.hashers import check_password
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.core.mail import send_mail
+from django.conf import settings
+from datetime import datetime, timedelta
 
-from .forms import RegisterForm
+from .forms import (
+    RegisterForm,
+    ProfileForm,
+    ForgotPasswordForm,
+    OTPForm,
+    ResetPasswordForm,
+)
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -32,25 +45,23 @@ def register_view(request: HttpRequest) -> HttpResponse:
             password = form.cleaned_data["password"]
             mobile_number = form.cleaned_data.get("mobile_number")
             address = form.cleaned_data.get("address")
+            
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+            )
+            user.mobile_number = mobile_number
+            user.address = address
+            user.save()
 
-            if User.objects.filter(username=username).exists():
-                form.add_error("username", "Username already exists.")
-
-            elif User.objects.filter(email=email).exists():
-                form.add_error("email", "Email already exists.")
-
-            else:
-                user = User.objects.create_user(
-                    username=username, email=email, password=password
-                )
-                user.mobile_number = mobile_number
-                user.address = address
-                user.save()
-
-                logger.info("User '%s' registered successfully", username)
-                messages.success(request, "Account created successfully!")
-                return redirect("login")
+            logger.info("User '%s' registered successfully", username)
+            messages.success(request, "Account created successfully!")
+            return redirect("login")
+    
         else:
+            print(form.errors)
+            print(form.non_field_errors())
             messages.error(request, "Please correct the errors below")
 
     return render(request, "register.html", {"form": form})
@@ -87,79 +98,25 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @login_required(login_url="login")
 def profile(request: HttpRequest) -> HttpResponse:
     """
-    Allows the user to update username, email, mobile_number,
-    address, and password after validation.
+    Update user profile using ProfileForm
     """
 
     user = request.user
     logger.info("Profile page accessed by '%s'", user.username)
 
-    context = {
-        "user": user,
-        "success_msg": "",
-        "username_error": "",
-        "mobile_number_error": "",
-        "old_password_error": "",
-        "password_error": "",
-    }
-
     if request.method == "POST":
-        mobile_number = request.POST.get("mobile_number")
-        username = request.POST.get("username")
-        address = request.POST.get("address")
+        form = ProfileForm(request.POST, instance=user)
 
-        if User.objects.filter(username=username).exclude(id=user.id).exists():
-            context["username_error"] = "Username already exists."
-        if mobile_number and not mobile_number.isdigit():
-            context["mobile_number_error"] = "Only digits allowed"
-        old = request.POST.get("old_password")
-        new = request.POST.get("new_password")
-        confirm = request.POST.get("confirm_password")
+        if form.is_valid():
+            updated_user = form.save()
+            update_session_auth_hash(request, updated_user)
 
-        if old and new and confirm:
-            if not check_password(old, user.password):
-                context["old_password_error"] = "Old password is incorrect"
-
-            elif new != confirm:
-                context["password_error"] = "New password & confirm do not match"
-
-            elif len(new) < 8:
-                context["password_error"] = "Minimum 8 characters required"
-
-            elif not any(c.isupper() for c in new):
-                context["password_error"] = "Must contain uppercase letter"
-
-            elif not any(c.islower() for c in new):
-                context["password_error"] = "Must contain lowercase letter"
-
-            elif not any(c.isdigit() for c in new):
-                context["password_error"] = "Must contain number"
-
-            elif old == new:
-                context["password_error"] = (
-                    "New password cannot be same as old password"
-                )
-
-        if (
-            not context["username_error"]
-            and not context["old_password_error"]
-            and not context["mobile_number_error"]
-            and not context["password_error"]
-        ):
-
-            user.username = username
-            user.mobile_number = mobile_number
-            user.address = address
-
-            if old and new and confirm:
-                user.set_password(new)
-                logger.info("Password updated for '%s'", user.username)
-                update_session_auth_hash(request, user)
-            user.save()
             logger.info("Profile updated for '%s'", user.username)
-            context["success_msg"] = "Profile updated successfully!"
-    return render(request, "profile.html", context)
-
+            messages.success(request, "Profile updated successfully!")
+            return redirect("profile")
+    else:
+        form = ProfileForm(instance=user)
+    return render(request, "profile.html", {"form": form})
 
 def logout_view(request: HttpRequest) -> HttpResponse:
     """
@@ -170,3 +127,123 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     messages.success(request, "Logout Successfully!")
     return redirect("login")
+
+def forgot_password(request):
+    if request.method == "POST":
+        form = ForgotPasswordForm(request.POST)
+
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+
+            try:
+                user = User.objects.get(email=email)
+
+                otp = str(random.randint(100000, 999999))
+
+                request.session["reset_otp"] = otp
+                request.session["reset_user"] = user.id
+                
+                request.session["otp_expiry"] = (
+                     datetime.now() + timedelta(minutes=2)  
+                ).isoformat()
+
+                send_mail(
+                    "Password Reset OTP",
+                    f"Your OTP is: {otp}",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+
+                messages.success(request, "OTP sent successfully.")
+                return redirect("verify_otp")
+
+            except User.DoesNotExist:
+                messages.error(request, "Email not found.")
+    else:
+        form = ForgotPasswordForm()
+
+    return render(request, "forgot_password.html", {"form": form})
+
+def verify_otp(request):
+    if request.method == "POST":
+        form = OTPForm(request.POST)
+         
+        if form.is_valid():
+            otp = form.cleaned_data["otp"]
+        
+            expiry = request.session.get("otp_expiry")
+
+        if not expiry:
+            messages.error(request, "OTP expired.")
+            return redirect("forgot_password")
+
+        expiry_time = datetime.fromisoformat(expiry)
+
+        if datetime.now() > expiry_time:
+            request.session.flush()
+            messages.error(request, "OTP expired. Please request a new OTP.")
+            return redirect("forgot_password")
+
+        if otp == request.session.get("reset_otp"):
+            return redirect("reset_password")
+
+        messages.error(request, "Invalid OTP.")
+    else:
+        form = OTPForm()
+
+    return render(request, "verify_otp.html", {"form": form})
+
+def reset_password(request):
+    user_id = request.session.get("reset_user")
+
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect("forgot_password")
+
+    user = User.objects.get(id=user_id)
+
+    if request.method == "POST":
+        form = ResetPasswordForm(request.POST)
+
+        if form.is_valid():
+            new_password = form.cleaned_data["new_password"]
+
+            user.set_password(new_password)
+            user.save()
+
+            request.session.pop("reset_otp", None)
+            request.session.pop("reset_user", None)
+
+            messages.success(request, "Password changed successfully.")
+            return redirect("login")
+    else:
+        form = ResetPasswordForm()
+
+    return render(request, "reset_password.html", {"form": form})
+def resend_otp(request):
+    user_id = request.session.get("reset_user")
+
+    if not user_id:
+        messages.error(request, "Session expired.")
+        return redirect("forgot_password")
+
+    user = User.objects.get(id=user_id)
+
+    otp = str(random.randint(100000, 999999))
+
+    request.session["reset_otp"] = otp
+    request.session["otp_expiry"] = (
+        datetime.now() + timedelta(minutes=5)
+    ).isoformat()
+
+    send_mail(
+        "Password Reset OTP",
+        f"Your new OTP is: {otp}",
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        fail_silently=False,
+    )
+
+    messages.success(request, "A new OTP has been sent to your email.")
+    return redirect("verify_otp")

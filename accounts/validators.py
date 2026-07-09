@@ -7,9 +7,7 @@ def validate_password_strength(password):
     """
 
     if len(password) < 8:
-        raise forms.ValidationError(
-            "Password must be at least 8 characters."
-        )
+        raise forms.ValidationError("Password must be at least 8 characters.")
 
     if not any(char.isupper() for char in password):
         raise forms.ValidationError(
@@ -22,6 +20,4 @@ def validate_password_strength(password):
         )
 
     if not any(char.isdigit() for char in password):
-        raise forms.ValidationError(
-            "Password must contain at least one number."
-        )
+        raise forms.ValidationError("Password must contain at least one number.")

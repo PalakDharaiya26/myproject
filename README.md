@@ -40,7 +40,7 @@ Git (optional)
 ## 1. Clone the Repository
 
 ```bash
-git clone <git clone https://github.com/PalakDharaiya26/myproject.git>
+git clone  https://github.com/PalakDharaiya26/myproject.git
 cd myproject
 ```
 
@@ -66,7 +66,7 @@ source .venv/bin/activate
 ### 4. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install django
 ```
 
 ### 5. Apply Database Migrations

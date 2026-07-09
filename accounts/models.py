@@ -2,6 +2,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
+from django.utils import timezone
 
 phone_validator = RegexValidator(
     regex=r"^\d{1,15}$",
@@ -33,3 +34,25 @@ class CustomUser(AbstractUser):
         Return the username of the user.
         """
         return self.username
+
+
+class PasswordResetOTP(models.Model):
+    """
+    Stores OTP for password reset.
+    """
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+    )
+
+    otp = models.CharField(max_length=6)
+
+    expiry_time = models.DateTimeField()
+
+    created_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {self.otp}"

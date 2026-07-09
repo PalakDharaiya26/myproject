@@ -8,7 +8,6 @@ urlpatterns = [
     path("profile/", web_views.profile, name="profile"),
     path("dashboard/", web_views.dashboard, name="home"),
     path("logout/", web_views.logout_view, name="logout"),
-    
     path(
         "forgot-password/",
         web_views.forgot_password,
@@ -25,9 +24,8 @@ urlpatterns = [
         name="reset_password",
     ),
     path(
-    "resend-otp/",
-    web_views.resend_otp,
-    name="resend_otp",
-),
+        "resend-otp/",
+        web_views.resend_otp,
+        name="resend_otp",
+    ),
 ]
-

@@ -1,6 +1,10 @@
 # Python imports
 import logging
 import random
+from datetime import timedelta
+
+from django.conf import settings
+
 # Django imports
 from django.contrib import messages
 from django.contrib.auth import (
@@ -11,19 +15,19 @@ from django.contrib.auth import (
     update_session_auth_hash,
 )
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
-from django.core.mail import send_mail
-from django.conf import settings
-from datetime import datetime, timedelta
+from django.utils import timezone
 
 from .forms import (
-    RegisterForm,
-    ProfileForm,
     ForgotPasswordForm,
     OTPForm,
+    ProfileForm,
+    RegisterForm,
     ResetPasswordForm,
 )
+from .models import PasswordResetOTP
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -40,28 +44,14 @@ def register_view(request: HttpRequest) -> HttpResponse:
         form = RegisterForm(request.POST)
 
         if form.is_valid():
-            username = form.cleaned_data["username"]
-            email = form.cleaned_data["email"]
-            password = form.cleaned_data["password"]
-            mobile_number = form.cleaned_data.get("mobile_number")
-            address = form.cleaned_data.get("address")
-            
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-            )
-            user.mobile_number = mobile_number
-            user.address = address
-            user.save()
+            user = form.save()
 
-            logger.info("User '%s' registered successfully", username)
+            logger.info("User '%s' registered successfully", user.username)
             messages.success(request, "Account created successfully!")
             return redirect("login")
-    
+
         else:
-            print(form.errors)
-            print(form.non_field_errors())
+            logger.warning("Registration failed: %s", form.errors)
             messages.error(request, "Please correct the errors below")
 
     return render(request, "register.html", {"form": form})
@@ -118,6 +108,7 @@ def profile(request: HttpRequest) -> HttpResponse:
         form = ProfileForm(instance=user)
     return render(request, "profile.html", {"form": form})
 
+
 def logout_view(request: HttpRequest) -> HttpResponse:
     """
     Logs out the current user and redirects to the login page.
@@ -127,6 +118,7 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     messages.success(request, "Logout Successfully!")
     return redirect("login")
+
 
 def forgot_password(request):
     if request.method == "POST":
@@ -140,12 +132,15 @@ def forgot_password(request):
 
                 otp = str(random.randint(100000, 999999))
 
-                request.session["reset_otp"] = otp
+                PasswordResetOTP.objects.filter(user=user).delete()
+
+                PasswordResetOTP.objects.create(
+                    user=user,
+                    otp=otp,
+                    expiry_time=timezone.now() + timedelta(minutes=2),
+                )
+
                 request.session["reset_user"] = user.id
-                
-                request.session["otp_expiry"] = (
-                     datetime.now() + timedelta(minutes=2)  
-                ).isoformat()
 
                 send_mail(
                     "Password Reset OTP",
@@ -165,34 +160,36 @@ def forgot_password(request):
 
     return render(request, "forgot_password.html", {"form": form})
 
+
 def verify_otp(request):
     if request.method == "POST":
         form = OTPForm(request.POST)
-         
+
         if form.is_valid():
             otp = form.cleaned_data["otp"]
-        
-            expiry = request.session.get("otp_expiry")
 
-        if not expiry:
-            messages.error(request, "OTP expired.")
-            return redirect("forgot_password")
+            user_id = request.session.get("reset_user")
 
-        expiry_time = datetime.fromisoformat(expiry)
+            otp_record = PasswordResetOTP.objects.get(user_id=user_id)
 
-        if datetime.now() > expiry_time:
-            request.session.flush()
-            messages.error(request, "OTP expired. Please request a new OTP.")
-            return redirect("forgot_password")
+            if not otp_record:
+                messages.error(request, "OTP not found.")
+                return redirect("forgot_password")
 
-        if otp == request.session.get("reset_otp"):
-            return redirect("reset_password")
+            if timezone.now() > otp_record.expiry_time:
+                otp_record.delete()
+                messages.error(request, "OTP expired.")
+                return redirect("forgot_password")
 
-        messages.error(request, "Invalid OTP.")
+            if otp == otp_record.otp:
+                return redirect("reset_password")
+
+            messages.error(request, "Invalid OTP.")
     else:
         form = OTPForm()
 
     return render(request, "verify_otp.html", {"form": form})
+
 
 def reset_password(request):
     user_id = request.session.get("reset_user")
@@ -212,7 +209,7 @@ def reset_password(request):
             user.set_password(new_password)
             user.save()
 
-            request.session.pop("reset_otp", None)
+            PasswordResetOTP.objects.filter(user=user).delete()
             request.session.pop("reset_user", None)
 
             messages.success(request, "Password changed successfully.")
@@ -221,6 +218,8 @@ def reset_password(request):
         form = ResetPasswordForm()
 
     return render(request, "reset_password.html", {"form": form})
+
+
 def resend_otp(request):
     user_id = request.session.get("reset_user")
 
@@ -232,10 +231,13 @@ def resend_otp(request):
 
     otp = str(random.randint(100000, 999999))
 
-    request.session["reset_otp"] = otp
-    request.session["otp_expiry"] = (
-        datetime.now() + timedelta(minutes=5)
-    ).isoformat()
+    PasswordResetOTP.objects.filter(user=user).delete()
+
+    PasswordResetOTP.objects.create(
+        user=user,
+        otp=otp,
+        expiry_time=timezone.now() + timedelta(minutes=2),
+    )
 
     send_mail(
         "Password Reset OTP",

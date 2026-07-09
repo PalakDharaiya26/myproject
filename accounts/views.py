@@ -120,7 +120,7 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     return redirect("login")
 
 
-def forgot_password(request):
+def forgot_password(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ForgotPasswordForm(request.POST)
 
@@ -132,7 +132,9 @@ def forgot_password(request):
 
                 otp = str(random.randint(100000, 999999))
 
-                PasswordResetOTP.objects.filter(user=user).delete()
+                PasswordResetOTP.objects.filter(
+                     expiry_time__lt=timezone.now()
+                ).delete()
 
                 PasswordResetOTP.objects.create(
                     user=user,
@@ -161,44 +163,49 @@ def forgot_password(request):
     return render(request, "forgot_password.html", {"form": form})
 
 
-def verify_otp(request):
+def verify_otp(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = OTPForm(request.POST)
 
         if form.is_valid():
             otp = form.cleaned_data["otp"]
-
             user_id = request.session.get("reset_user")
 
-            otp_record = PasswordResetOTP.objects.get(user_id=user_id)
-
-            if not otp_record:
+            try:
+                otp_record = PasswordResetOTP.objects.get(user_id=user_id)
+            except PasswordResetOTP.DoesNotExist:
                 messages.error(request, "OTP not found.")
                 return redirect("forgot_password")
-
+            
             if timezone.now() > otp_record.expiry_time:
                 otp_record.delete()
                 messages.error(request, "OTP expired.")
                 return redirect("forgot_password")
-
+ 
             if otp == otp_record.otp:
+                otp_record.delete()
                 return redirect("reset_password")
 
             messages.error(request, "Invalid OTP.")
+        
     else:
         form = OTPForm()
 
     return render(request, "verify_otp.html", {"form": form})
 
 
-def reset_password(request):
+def reset_password(request: HttpRequest) -> HttpResponse:
     user_id = request.session.get("reset_user")
 
     if not user_id:
         messages.error(request, "Session expired.")
         return redirect("forgot_password")
 
-    user = User.objects.get(id=user_id)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("forgot_password")
 
     if request.method == "POST":
         form = ResetPasswordForm(request.POST)
@@ -220,15 +227,19 @@ def reset_password(request):
     return render(request, "reset_password.html", {"form": form})
 
 
-def resend_otp(request):
+def resend_otp(request: HttpRequest) -> HttpResponse:
     user_id = request.session.get("reset_user")
 
     if not user_id:
         messages.error(request, "Session expired.")
         return redirect("forgot_password")
 
-    user = User.objects.get(id=user_id)
-
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect("forgot_password")
+    
     otp = str(random.randint(100000, 999999))
 
     PasswordResetOTP.objects.filter(user=user).delete()

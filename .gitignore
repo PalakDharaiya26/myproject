@@ -1,16 +1,16 @@
-# Python
-__pycache__/
-*.py[cod]
+    # Python
+    __pycache__/
+    *.py[cod]
 
-# Virtual Environment
-.venv/
+    # Virtual Environment
+    .venv/
 
-# Django
-db.sqlite3
-*.log
+    # Django
+    db.sqlite3
+    *.log
 
-# Environment Variables
-.env
+    # Environment Variables
+    .env
 
-# IDE
-.vscode/
+    # IDE
+    .vscode/

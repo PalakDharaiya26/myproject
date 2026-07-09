@@ -1,7 +1,6 @@
 # Django imports
 from django import forms
 from django.contrib.auth import get_user_model
-
 from .validators import validate_password_strength
 
 User = get_user_model()
@@ -19,14 +18,14 @@ class RegisterForm(forms.ModelForm):
         password (CharField): User's password.
         confirm_password (CharField): Password confirmation.
     """
-
     password = forms.CharField(widget=forms.PasswordInput)
     confirm_password = forms.CharField(widget=forms.PasswordInput)
+
 
     class Meta:
         model = User
         fields = ["username", "email", "mobile_number", "address"]
-
+    
     def clean_mobile_number(self):
         """
         Validates the mobile_number
@@ -41,13 +40,13 @@ class RegisterForm(forms.ModelForm):
             )
 
         return mobile_number
-
+    
     def clean(self):
         cleaned_data = super().clean()
 
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
-
+        
         if password:
             validate_password_strength(password)
 
@@ -56,7 +55,7 @@ class RegisterForm(forms.ModelForm):
                 raise forms.ValidationError("Passwords do not match")
 
         return cleaned_data
-
+    
     def save(self, commit=True):
         user = super().save(commit=False)
 
@@ -67,8 +66,7 @@ class RegisterForm(forms.ModelForm):
             user.save()
 
         return user
-
-
+    
 class ProfileForm(forms.ModelForm):
     """
     Model form for updating user profile.
@@ -95,15 +93,19 @@ class ProfileForm(forms.ModelForm):
         widgets = {
             "address": forms.Textarea(),
         }
-
+    
     def clean_username(self):
         username = self.cleaned_data.get("username")
 
-        if User.objects.filter(username=username).exclude(id=self.instance.id).exists():
+        if (
+            User.objects.filter(username=username)
+            .exclude(id=self.instance.id)
+            .exists()
+        ):
             raise forms.ValidationError("Username already exists.")
 
         return username
-
+    
     def clean_mobile_number(self):
         mobile_number = self.cleaned_data.get("mobile_number")
 
@@ -112,14 +114,20 @@ class ProfileForm(forms.ModelForm):
 
         return mobile_number
 
+
     def clean_email(self):
         email = self.cleaned_data.get("email")
 
-        if User.objects.filter(email=email).exclude(id=self.instance.id).exists():
+        if (
+           User.objects.filter(email=email)
+           .exclude(id=self.instance.id)
+           .exists()
+        ):
             raise forms.ValidationError("Email already exists.")
-
+       
         return email
 
+   
     def clean(self):
         cleaned_data = super().clean()
 
@@ -130,26 +138,28 @@ class ProfileForm(forms.ModelForm):
         if old_password or new_password or confirm_password:
 
             if not old_password:
-                raise forms.ValidationError("Old password is required.")
+               raise forms.ValidationError("Old password is required.")
 
             if not self.instance.check_password(old_password):
-                raise forms.ValidationError("Old password is incorrect.")
+               raise forms.ValidationError("Old password is incorrect.")
 
             if not new_password:
-                raise forms.ValidationError("New password is required.")
+               raise forms.ValidationError("New password is required.")
 
             validate_password_strength(new_password)
 
             if new_password != confirm_password:
-                raise forms.ValidationError("New password & confirm do not match.")
+               raise forms.ValidationError(
+                "New password & confirm do not match."
+            )
 
             if old_password == new_password:
-                raise forms.ValidationError(
-                    "New password cannot be same as old password."
-                )
+               raise forms.ValidationError(
+                "New password cannot be same as old password."
+            )
 
         return cleaned_data
-
+    
     def save(self, commit=True):
         user = super().save(commit=False)
 
@@ -157,20 +167,17 @@ class ProfileForm(forms.ModelForm):
 
         if new_password:
             user.set_password(new_password)
-
+        
         if commit:
             user.save()
-
+          
         return user
-
 
 class ForgotPasswordForm(forms.Form):
     email = forms.EmailField()
 
-
 class OTPForm(forms.Form):
     otp = forms.CharField(max_length=6)
-
 
 class ResetPasswordForm(forms.Form):
     new_password = forms.CharField(widget=forms.PasswordInput)
@@ -181,11 +188,12 @@ class ResetPasswordForm(forms.Form):
 
         new_password = cleaned_data.get("new_password")
         confirm_password = cleaned_data.get("confirm_password")
-
+        
         if new_password:
-            validate_password_strength(new_password)
-
+           validate_password_strength(new_password)
+           
         if new_password != confirm_password:
             raise forms.ValidationError("Passwords do not match.")
 
         return cleaned_data
+    

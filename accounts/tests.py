@@ -312,3 +312,77 @@ class AccountsTestCase(TestCase):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
+        
+    # -----------------------
+    # VERIFY OTP NOT FOUND
+    # -----------------------
+    def test_verify_otp_not_found(self):
+       session = self.client.session
+       session["reset_user"] = self.user.id
+       session.save()
+
+       response = self.client.post(
+        reverse("verify_otp"),
+        {
+            "otp": "123456",
+        },
+    )
+
+       self.assertEqual(response.status_code, 302)
+       self.assertRedirects(response, reverse("forgot_password"))
+
+    # -----------------------
+    # VERIFY OTP EXPIRED
+    # -----------------------
+    def test_verify_expired_otp(self):
+
+        PasswordResetOTP.objects.create(
+            user=self.user,
+            otp="123456",
+            expiry_time=timezone.now() - timedelta(minutes=1),
+        )
+
+        session = self.client.session
+        session["reset_user"] = self.user.id
+        session.save()
+
+        response = self.client.post(
+            reverse("verify_otp"),
+            {
+                "otp": "123456",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("forgot_password"))
+
+    # -----------------------
+    # RESET PASSWORD USER NOT FOUND
+    # -----------------------
+    def test_reset_password_user_not_found(self):
+
+        session = self.client.session
+        session["reset_user"] = 99999
+        session.save()
+
+        response = self.client.get(reverse("reset_password"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("forgot_password"))
+
+    # -----------------------
+    # RESEND OTP USER NOT FOUND
+    # -----------------------
+    @patch("accounts.views.send_mail")
+    def test_resend_otp_user_not_found(self, mock_send_mail):
+
+        session = self.client.session
+        session["reset_user"] = 99999
+        session.save()
+
+        response = self.client.get(reverse("resend_otp"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("forgot_password"))
+
+        mock_send_mail.assert_not_called()

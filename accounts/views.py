@@ -4,29 +4,18 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
-
 # Django imports
 from django.contrib import messages
-from django.contrib.auth import (
-    authenticate,
-    get_user_model,
-    login,
-    logout,
-    update_session_auth_hash,
-)
+from django.contrib.auth import (authenticate, get_user_model, login, logout,
+                                 update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from .forms import (
-    ForgotPasswordForm,
-    OTPForm,
-    ProfileForm,
-    RegisterForm,
-    ResetPasswordForm,
-)
+from .forms import (ForgotPasswordForm, OTPForm, ProfileForm, RegisterForm,
+                    ResetPasswordForm)
 from .models import PasswordResetOTP
 
 User = get_user_model()
@@ -131,10 +120,9 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
                 user = User.objects.get(email=email)
 
                 otp = str(random.randint(100000, 999999))
+                PasswordResetOTP.objects.filter(user=user).delete()
 
-                PasswordResetOTP.objects.filter(
-                     expiry_time__lt=timezone.now()
-                ).delete()
+                PasswordResetOTP.objects.filter(expiry_time__lt=timezone.now()).delete()
 
                 PasswordResetOTP.objects.create(
                     user=user,
@@ -143,14 +131,23 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
                 )
 
                 request.session["reset_user"] = user.id
+                request.session["otp_verified"] = False
 
-                send_mail(
-                    "Password Reset OTP",
-                    f"Your OTP is: {otp}",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=False,
-                )
+                try:
+                    send_mail(
+                        "Password Reset OTP",
+                        f"Your OTP is: {otp}",
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    logger.exception("Failed to send OTP email: %s", e)
+                    messages.error(
+                        request,
+                        "Unable to send OTP email. Please try again later.",
+                    )
+                    return redirect("forgot_password")
 
                 messages.success(request, "OTP sent successfully.")
                 return redirect("verify_otp")
@@ -171,23 +168,28 @@ def verify_otp(request: HttpRequest) -> HttpResponse:
             otp = form.cleaned_data["otp"]
             user_id = request.session.get("reset_user")
 
-            try:
-                otp_record = PasswordResetOTP.objects.get(user_id=user_id)
-            except PasswordResetOTP.DoesNotExist:
+            otp_record = (
+                PasswordResetOTP.objects.filter(user_id=user_id)
+                .order_by("-created_at")
+                .first()
+            )
+
+            if not otp_record:
                 messages.error(request, "OTP not found.")
                 return redirect("forgot_password")
-            
+
             if timezone.now() > otp_record.expiry_time:
                 otp_record.delete()
                 messages.error(request, "OTP expired.")
                 return redirect("forgot_password")
- 
+
             if otp == otp_record.otp:
                 otp_record.delete()
+                request.session["otp_verified"] = True
                 return redirect("reset_password")
 
             messages.error(request, "Invalid OTP.")
-        
+
     else:
         form = OTPForm()
 
@@ -200,6 +202,10 @@ def reset_password(request: HttpRequest) -> HttpResponse:
     if not user_id:
         messages.error(request, "Session expired.")
         return redirect("forgot_password")
+
+    if not request.session.get("otp_verified"):
+        messages.error(request, "Please verify OTP first.")
+        return redirect("verify_otp")
 
     try:
         user = User.objects.get(id=user_id)
@@ -218,6 +224,7 @@ def reset_password(request: HttpRequest) -> HttpResponse:
 
             PasswordResetOTP.objects.filter(user=user).delete()
             request.session.pop("reset_user", None)
+            request.session.pop("otp_verified", None)
 
             messages.success(request, "Password changed successfully.")
             return redirect("login")
@@ -239,7 +246,7 @@ def resend_otp(request: HttpRequest) -> HttpResponse:
     except User.DoesNotExist:
         messages.error(request, "User not found.")
         return redirect("forgot_password")
-    
+
     otp = str(random.randint(100000, 999999))
 
     PasswordResetOTP.objects.filter(user=user).delete()
@@ -250,13 +257,21 @@ def resend_otp(request: HttpRequest) -> HttpResponse:
         expiry_time=timezone.now() + timedelta(minutes=2),
     )
 
-    send_mail(
-        "Password Reset OTP",
-        f"Your new OTP is: {otp}",
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            "Password Reset OTP",
+            f"Your new OTP is: {otp}",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        logger.exception("Failed to send OTP email: %s", e)
+        messages.error(
+            request,
+            "Unable to send OTP email. Please try again later.",
+        )
+        return redirect("verify_otp")
 
     messages.success(request, "A new OTP has been sent to your email.")
     return redirect("verify_otp")

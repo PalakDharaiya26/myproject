@@ -1,9 +1,15 @@
-# Django imports
 from django.contrib import admin
-from .models import PasswordResetOTP
+from django.contrib.auth.admin import UserAdmin
 
-# Local imports
-from .models import CustomUser
+from .models import CustomUser, PasswordResetOTP
 
-admin.site.register(CustomUser)
-admin.site.register(PasswordResetOTP)
+
+class PasswordResetOTPInline(admin.TabularInline):
+    model = PasswordResetOTP
+    extra = 0
+    can_delete = False
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    inlines = [PasswordResetOTPInline]

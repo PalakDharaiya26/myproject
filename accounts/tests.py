@@ -266,9 +266,8 @@ class AccountsTestCase(TestCase):
     def test_reset_password(self):
 
         session = self.client.session
-
         session["reset_user"] = self.user.id
-
+        session["otp_verified"] = True
         session.save()
 
         response = self.client.post(
@@ -312,24 +311,24 @@ class AccountsTestCase(TestCase):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
-        
+
     # -----------------------
     # VERIFY OTP NOT FOUND
     # -----------------------
     def test_verify_otp_not_found(self):
-       session = self.client.session
-       session["reset_user"] = self.user.id
-       session.save()
+        session = self.client.session
+        session["reset_user"] = self.user.id
+        session.save()
 
-       response = self.client.post(
-        reverse("verify_otp"),
-        {
-            "otp": "123456",
-        },
-    )
+        response = self.client.post(
+            reverse("verify_otp"),
+            {
+                "otp": "123456",
+            },
+        )
 
-       self.assertEqual(response.status_code, 302)
-       self.assertRedirects(response, reverse("forgot_password"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("forgot_password"))
 
     # -----------------------
     # VERIFY OTP EXPIRED
@@ -363,6 +362,7 @@ class AccountsTestCase(TestCase):
 
         session = self.client.session
         session["reset_user"] = 99999
+        session["otp_verified"] = True
         session.save()
 
         response = self.client.get(reverse("reset_password"))
@@ -378,6 +378,7 @@ class AccountsTestCase(TestCase):
 
         session = self.client.session
         session["reset_user"] = 99999
+        session["otp_verified"] = True
         session.save()
 
         response = self.client.get(reverse("resend_otp"))
@@ -386,3 +387,110 @@ class AccountsTestCase(TestCase):
         self.assertRedirects(response, reverse("forgot_password"))
 
         mock_send_mail.assert_not_called()
+
+    # -----------------------
+    # DUPLICATE EMAIL REGISTRATION
+    # -----------------------
+    def test_register_duplicate_email(self):
+
+        response = self.client.post(
+            reverse("register"),
+            {
+                "username": "anotheruser",
+                "email": "test@example.com",
+                "password": "TestPass123",
+                "confirm_password": "TestPass123",
+                "mobile_number": "1234567890",
+                "address": "Ahmedabad",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            User.objects.filter(email="test@example.com").count(),
+            1,
+        )
+
+    # -----------------------
+    # RESET PASSWORD WEAK PASSWORD
+    # ------------------------
+    def test_reset_password_weak_password(self):
+
+        session = self.client.session
+        session["reset_user"] = self.user.id
+        session["otp_verified"] = True
+        session.save()
+
+        response = self.client.post(
+            reverse("reset_password"),
+            {
+                "new_password": "123456",
+                "confirm_password": "123456",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.user.refresh_from_db()
+
+        self.assertFalse(self.user.check_password("123456"))
+
+    # -----------------------
+    # PROFILE DUPLICATE USERNAME
+    # -----------------------
+    def test_profile_duplicate_username(self):
+
+        User.objects.create_user(
+            username="anotheruser",
+            email="another@example.com",
+            password="TestPass123",
+        )
+
+        self.client.login(
+            username="testuser",
+            password="TestPass123",
+        )
+
+        response = self.client.post(
+            reverse("profile"),
+            {
+                "username": "anotheruser",
+                "email": "test@example.com",
+                "mobile_number": "1234567890",
+                "address": "Ahmedabad",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+    # -----------------------
+    # RESEND OTP MULTIPLE TIMES
+    # -----------------------
+    @patch("accounts.views.send_mail")
+    def test_resend_otp_multiple_times(self, mock_send_mail):
+
+        session = self.client.session
+        session["reset_user"] = self.user.id
+        session["otp_verified"] = True
+        session.save()
+
+        self.client.get(reverse("resend_otp"))
+        self.client.get(reverse("resend_otp"))
+        self.client.get(reverse("resend_otp"))
+
+        self.assertEqual(
+            PasswordResetOTP.objects.filter(user=self.user).count(),
+            1,
+        )
+
+        self.assertEqual(mock_send_mail.call_count, 3)
+
+    # -----------------------
+    # RESET PASSWORD WITHOUT SESSION
+    # -----------------------
+    def test_reset_password_without_session(self):
+
+        response = self.client.get(reverse("reset_password"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("forgot_password"))

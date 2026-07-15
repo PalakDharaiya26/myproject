@@ -36,9 +36,7 @@ class RegisterForm(forms.ModelForm):
         mobile_number = self.cleaned_data.get("mobile_number")
 
         if mobile_number and not mobile_number.isdigit():
-            raise forms.ValidationError(
-                "mobile_number number must contain  only numbers."
-            )
+            raise forms.ValidationError("mobile number must contain  only digits.")
 
         return mobile_number
 
@@ -127,26 +125,32 @@ class ProfileForm(forms.ModelForm):
         new_password = cleaned_data.get("new_password")
         confirm_password = cleaned_data.get("confirm_password")
 
-        if old_password or new_password or confirm_password:
+        if not (old_password or new_password or confirm_password):
+            return cleaned_data
 
-            if not old_password:
-                raise forms.ValidationError("Old password is required.")
+        if not old_password:
+            raise forms.ValidationError("Old password is required.")
 
-            if not self.instance.check_password(old_password):
-                raise forms.ValidationError("Old password is incorrect.")
+        if not self.instance.check_password(old_password):
+            raise forms.ValidationError("Old password is incorrect.")
 
-            if not new_password:
-                raise forms.ValidationError("New password is required.")
+        if not new_password:
+            raise forms.ValidationError("New password is required.")
 
-            validate_password_strength(new_password)
+        if not confirm_password:
+            raise forms.ValidationError("Confirm password is required.")
 
-            if new_password != confirm_password:
-                raise forms.ValidationError("New password & confirm do not match.")
+        validate_password_strength(new_password)
 
-            if old_password == new_password:
-                raise forms.ValidationError(
-                    "New password cannot be same as old password."
-                )
+        if new_password != confirm_password:
+            raise forms.ValidationError(
+                "New password  and confirm password do not match."
+            )
+
+        if old_password == new_password:
+            raise forms.ValidationError(
+                "New password cannot be same as the old password."
+            )
 
         return cleaned_data
 

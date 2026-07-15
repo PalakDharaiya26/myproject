@@ -4,33 +4,33 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
-
 # Django imports
 from django.contrib import messages
-from django.contrib.auth import (
-    authenticate,
-    get_user_model,
-    login,
-    logout,
-    update_session_auth_hash,
-)
+from django.contrib.auth import (authenticate, get_user_model, login, logout,
+                                 update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from .forms import (
-    ForgotPasswordForm,
-    OTPForm,
-    ProfileForm,
-    RegisterForm,
-    ResetPasswordForm,
-)
+from .forms import (ForgotPasswordForm, OTPForm, ProfileForm, RegisterForm,
+                    ResetPasswordForm)
 from .models import PasswordResetOTP
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def create_password_reset_otp(user, otp):
+    """Create a password reset OTP for the given user."""
+
+    return PasswordResetOTP.objects.create(
+        user=user,
+        otp=otp,
+        expiry_time=timezone.now() + timedelta(minutes=2),
+    )
 
 
 def register_view(request: HttpRequest) -> HttpResponse:
@@ -131,15 +131,12 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
                 user = User.objects.get(email=email)
 
                 otp = str(random.randint(100000, 999999))
-                PasswordResetOTP.objects.filter(user=user).delete()
 
-                PasswordResetOTP.objects.filter(expiry_time__lt=timezone.now()).delete()
+                PasswordResetOTP.objects.filter(
+                    Q(user=user) | Q(expiry_time__lt=timezone.now())
+                ).delete()
 
-                PasswordResetOTP.objects.create(
-                    user=user,
-                    otp=otp,
-                    expiry_time=timezone.now() + timedelta(minutes=2),
-                )
+                create_password_reset_otp(user, otp)
 
                 request.session["reset_user"] = user.id
                 request.session["otp_verified"] = False
@@ -277,11 +274,7 @@ def resend_otp(request: HttpRequest) -> HttpResponse:
 
     PasswordResetOTP.objects.filter(user=user).delete()
 
-    PasswordResetOTP.objects.create(
-        user=user,
-        otp=otp,
-        expiry_time=timezone.now() + timedelta(minutes=2),
-    )
+    create_password_reset_otp(user, otp)
 
     try:
         send_mail(

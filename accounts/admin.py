@@ -1,6 +1,8 @@
+# django imports
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
+# Local imports
 from .models import CustomUser, PasswordResetOTP
 
 

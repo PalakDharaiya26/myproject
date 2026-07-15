@@ -1,5 +1,7 @@
+# django imports
 from django.urls import path
 
+# Local imports
 from accounts import views as web_views
 
 urlpatterns = [

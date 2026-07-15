@@ -4,18 +4,29 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
+
 # Django imports
 from django.contrib import messages
-from django.contrib.auth import (authenticate, get_user_model, login, logout,
-                                 update_session_auth_hash)
+from django.contrib.auth import (
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+    update_session_auth_hash,
+)
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from .forms import (ForgotPasswordForm, OTPForm, ProfileForm, RegisterForm,
-                    ResetPasswordForm)
+from .forms import (
+    ForgotPasswordForm,
+    OTPForm,
+    ProfileForm,
+    RegisterForm,
+    ResetPasswordForm,
+)
 from .models import PasswordResetOTP
 
 User = get_user_model()
@@ -246,6 +257,21 @@ def resend_otp(request: HttpRequest) -> HttpResponse:
     except User.DoesNotExist:
         messages.error(request, "User not found.")
         return redirect("forgot_password")
+
+    existing_otp = (
+        PasswordResetOTP.objects.filter(user=user).order_by("-created_at").first()
+    )
+
+    if (
+        existing_otp
+        and timezone.now() < existing_otp.expiry_time
+        and timezone.now() < existing_otp.created_at + timedelta(seconds=30)
+    ):
+        messages.error(
+            request,
+            "Please wait 30 seconds before requesting a new OTP.",
+        )
+        return redirect("verify_otp")
 
     otp = str(random.randint(100000, 999999))
 

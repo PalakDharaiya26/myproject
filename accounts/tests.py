@@ -483,7 +483,7 @@ class AccountsTestCase(TestCase):
             1,
         )
 
-        self.assertEqual(mock_send_mail.call_count, 3)
+        self.assertEqual(mock_send_mail.call_count, 1)
 
     # -----------------------
     # RESET PASSWORD WITHOUT SESSION
